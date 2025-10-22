@@ -33,8 +33,7 @@ jobs:
       - name: Install Browsers
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
-          sudo apt-get install -y wget unzip xvfb
+          sudo apt-get install -y chromium-browser chromium-chromedriver wget unzip xvfb
           # Install Edge for Linux
           wget https://msedgedriver.azureedge.net/118.0.2088.76/edgedriver_linux64.zip
           unzip edgedriver_linux64.zip
@@ -44,11 +43,7 @@ jobs:
       - name: Run Pytest (Generate Allure + HTML reports)
         run: |
           mkdir -p allure-results report
-          if [ "${{ matrix.browser }}" == "chrome" ]; then
-            pytest tests --browser chrome --headless --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
-          else
-            pytest tests --browser edge --headless --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
-          fi
+          pytest tests --browser ${{ matrix.browser }} --headless --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
 
       - name: Download Allure CLI
         run: |
