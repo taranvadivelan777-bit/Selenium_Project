@@ -1,4 +1,4 @@
-name: Python Selenium Tests with Allure and HTML Reports
+name: Python Tests with Allure and HTML Reports
 
 on:
   push:
@@ -13,30 +13,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Python
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-html allure-pytest webdriver-manager
+          pip install pytest pytest-html allure-pytest webdriver-manager msedge-selenium-tools
 
-      # 4️⃣ Run Pytest for Chrome and Edge (generate Allure + HTML reports)
-      - name: Run Tests
+      - name: Run Pytest (Allure + HTML reports)
         run: |
           mkdir -p allure-results report
+          # Run tests for Chrome and Edge
           pytest tests --browser chrome --browser edge --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
 
-      # 5️⃣ Download Allure CLI
       - name: Download Allure CLI
         run: |
           ALLURE_VERSION=2.30.0
@@ -46,20 +42,17 @@ jobs:
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
           allure --version
 
-      # 6️⃣ Generate Allure Report
       - name: Generate Allure Report
         run: |
           allure generate allure-results --clean -o allure-report
 
-      # 7️⃣ Upload Allure Report Artifact
-      - name: Upload Allure Report
+      - name: Upload Allure Report Artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: allure-report
 
-      # 8️⃣ Upload HTML Report Artifact
-      - name: Upload HTML Report
+      - name: Upload HTML Report Artifact
         uses: actions/upload-artifact@v4
         with:
           name: pytest-html-report
