@@ -27,10 +27,16 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-html allure-pytest selenium webdriver-manager
 
-      - name: Run Pytest (Chrome + Edge, Allure + HTML reports)
+      - name: Run Pytest (Chrome & Edge, Allure + HTML reports)
         run: |
           mkdir -p allure-results report
-          pytest tests --browser chrome --browser edge --headless --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
+          pytest tests \
+            --browser chrome \
+            --browser edge \
+            --alluredir=allure-results \
+            --html=report/pytest-report.html \
+            --self-contained-html \
+            --disable-warnings -v
 
       - name: Download Allure CLI
         run: |
