@@ -1,107 +1,58 @@
-name: Run Tests and Publish Allure & HTML Reports
+name: Python Tests with Allure and HTML Reports
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-
-permissions:
-  contents: write
-
-env:
-  PYTHON_VERSION: '3.13'
-  ALLURE_VERSION: '2.30.0'   # current stable release that exists on GitHub
+    branches:
+      - main
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.11"
 
-      - name: Upgrade pip & Install dependencies
-        shell: pwsh
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if (Test-Path 'requirements.txt') {
-            python -m pip install -r requirements.txt
-          } else {
-            Write-Host "requirements.txt not found, installing manually..."
-            python -m pip install selenium pytest allure-pytest pytest-html
-          }
-
-      - name: Create required directories
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path allure-results | Out-Null
-          New-Item -ItemType Directory -Force -Path allure-report | Out-Null
-          New-Item -ItemType Directory -Force -Path report | Out-Null
-          New-Item -ItemType Directory -Force -Path site | Out-Null
+          pip install -r requirements.txt
+          pip install pytest pytest-html allure-pytest
 
       - name: Run Pytest (Generate Allure + HTML reports)
-        shell: pwsh
         run: |
-          python -m pytest tests --alluredir=allure-results `
-            --html=report/pytest-report.html `
-            --self-contained-html `
-            --disable-warnings -v
+          mkdir -p allure-results report
+          pytest tests --alluredir=allure-results --html=report/pytest-report.html --self-contained-html --disable-warnings -v
 
-      - name: Install Allure CLI
-        shell: pwsh
+      - name: Download Allure CLI
         run: |
-          $version = "${{ env.ALLURE_VERSION }}"
-          $url = "https://github.com/allure-framework/allure2/releases/download/$version/allure-$version.zip"
-          $zip = "$env:TEMP\allure-$version.zip"
-          Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
-          Expand-Archive -LiteralPath $zip -DestinationPath allure
-          $allureHome = (Get-ChildItem -Directory allure | Select-Object -First 1).FullName
-          Add-Content -Path $env:GITHUB_ENV -Value "ALLURE_HOME=$allureHome"
-          Add-Content -Path $env:GITHUB_ENV -Value "PATH=$allureHome\bin;$env:PATH"
+          ALLURE_VERSION=2.30.0
+          wget https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.tgz -O allure.tgz
+          tar -zxvf allure.tgz
+          sudo mv allure-${ALLURE_VERSION} /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+          allure --version
 
-      - name: Generate Allure HTML report
-        shell: pwsh
+      - name: Generate Allure Report
         run: |
-          if (-not (Test-Path "allure-results")) {
-            Write-Warning "No Allure results found, skipping generation."
-            exit 0
-          }
-          & "$env:ALLURE_HOME\bin\allure.bat" generate allure-results -o allure-report --clean
+          allure generate allure-results --clean -o allure-report
 
-      - name: Prepare combined site folder
-        shell: pwsh
-        run: |
-          if (Test-Path site) { Remove-Item -Recurse -Force site }
-          New-Item -ItemType Directory -Path site | Out-Null
-
-          # Copy Allure report
-          if (Test-Path allure-report) {
-            Copy-Item -Recurse allure-report site\allure-report
-          }
-
-          # Copy pytest HTML report
-          if (Test-Path report\pytest-report.html) {
-            New-Item -ItemType Directory -Path site\pytest-report | Out-Null
-            Copy-Item report\pytest-report.html site\pytest-report\index.html
-          }
-
-      - name: Upload Allure & HTML reports as artifacts
+      - name: Upload Allure Report Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: |
-            allure-report
-            report
+          name: allure-report
+          path: allure-report
 
-      - name: Deploy combined site (Allure + pytest HTML) to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload HTML Report Artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: site
-          publish_branch: gh-pages
+          name: pytest-html-report
+          path: report/pytest-report.html
