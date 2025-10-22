@@ -1,11 +1,12 @@
-from core.runner import Runner
-from pages.demoblaze_home import DemoBlazeHome
 import time
+import pytest
+from pages.demoblaze_home import DemoBlazeHome
 
+@pytest.mark.usefixtures("setup")
+class TestDemoBlazeHome:
 
-def test_demoblaze_home():
-    r = Runner(headless=True)  # set headless=False for headed mode
-    try:
+    def test_demoblaze_home(self):
+        r = self.driver  # get driver from setup fixture
         home = DemoBlazeHome(r)
         home.open_home()
         time.sleep(1)  # wait for page to load
@@ -15,7 +16,5 @@ def test_demoblaze_home():
         time.sleep(1)
 
         # Assert cart page loaded by checking cart title exists
-        cart_title = r.driver.title
+        cart_title = r.title
         assert "Cart" in cart_title or "STORE" in cart_title, "Cart page should be opened"
-    finally:
-        r.close()

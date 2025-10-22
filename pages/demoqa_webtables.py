@@ -2,6 +2,7 @@ from pages.base_page import BasePage
 from selenium.webdriver.common.by import By
 
 class WebTablesPage(BasePage):
+
     def __init__(self, driver):
         super().__init__(driver)
         self.url = 'https://demoqa.com/webtables'

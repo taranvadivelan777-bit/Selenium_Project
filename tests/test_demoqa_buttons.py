@@ -1,14 +1,15 @@
-from core.runner import Runner
+import pytest
+import os
 from pages.demoqa_buttons import ButtonsPage
 
-def test_buttons_page():
-    r = Runner(headless=True)
-    try:
+@pytest.mark.usefixtures("setup")
+class TestButtonsPage:
+
+    def test_buttons_page(self):
+        r = self.driver  # driver from setup fixture
         buttons = ButtonsPage(r)
         buttons.run_demo()
 
-        import os
+        # Assert screenshot is taken
         screenshot_path = os.path.join(os.getcwd(), 'reports', 'demoqa_buttons.png')
         assert os.path.exists(screenshot_path), "Buttons screenshot should exist"
-    finally:
-        r.close()
