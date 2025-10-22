@@ -40,6 +40,7 @@
 #     yield driver
 #     driver.quit()
 
+import os
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -47,9 +48,7 @@ from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from webdriver_manager.chrome import ChromeDriverManager
-import os
-
-EDGE_DRIVER_PATH = r"C:\WebDrivers\msedgedriver.exe"
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 # CLI option
 def pytest_addoption(parser):
@@ -65,35 +64,39 @@ def pytest_generate_tests(metafunc):
         browsers = list(dict.fromkeys(browsers))
         metafunc.parametrize("browser", browsers)
 
-# Fixture for driver (function scope)
+# Fixture for driver
 @pytest.fixture(scope="function")
 def setup(request, browser):
     driver = None
-
-    # Detect if running in CI
     is_ci = os.getenv("CI", "false").lower() == "true"
 
     if browser.lower() == "chrome":
         options = ChromeOptions()
         if is_ci:
-            options.add_argument("--headless")
+            options.add_argument("--headless=new")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(
+            service=ChromeService(ChromeDriverManager().install()),
+            options=options
+        )
 
     elif browser.lower() == "edge":
         options = EdgeOptions()
         if is_ci:
-            options.add_argument("--headless")
+            options.add_argument("--headless=new")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Edge(service=EdgeService(EDGE_DRIVER_PATH), options=options)
+        driver = webdriver.Edge(
+            service=EdgeService(EdgeChromiumDriverManager().install()),
+            options=options
+        )
 
     else:
         raise ValueError(f"Browser '{browser}' not supported!")
 
     driver.maximize_window()
     driver.implicitly_wait(10)
-    request.instance.driver = driver  # use instance instead of cls
+    request.instance.driver = driver
     yield driver
     driver.quit()
