@@ -1,4 +1,4 @@
-name: Python Tests with Allure and HTML Reports (Chrome + Edge)
+name: Python Tests with Allure and HTML Reports
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        browser: [chrome, edge]   # Run tests on both browsers
+        browser: [chrome, edge]  # Run tests on both browsers
 
     steps:
       - name: Checkout Repository
@@ -29,21 +29,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-html allure-pytest selenium webdriver-manager
-
-      - name: Install Browsers and Drivers
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
-          sudo apt-get install -y microsoft-edge-stable
-          wget https://msedgedriver.azureedge.net/117.0.2045.43/edgedriver_linux64.zip -O edgedriver.zip
-          unzip edgedriver.zip -d $HOME
-          sudo mv $HOME/msedgedriver /usr/bin/msedgedriver
+          pip install pytest pytest-html allure-pytest webdriver-manager
 
       - name: Run Pytest (Generate Allure + HTML reports)
         run: |
           mkdir -p allure-results report
-          pytest tests --alluredir=allure-results --html=report/pytest-report-${{ matrix.browser }}.html --self-contained-html --disable-warnings -v -o browser=${{ matrix.browser }}
+          pytest tests --browser=${{ matrix.browser }} --alluredir=allure-results --html=report/pytest-report-${{ matrix.browser }}.html --self-contained-html --disable-warnings -v
 
       - name: Download Allure CLI
         run: |
@@ -64,8 +55,8 @@ jobs:
           name: allure-report
           path: allure-report
 
-      - name: Upload HTML Report Artifact
+      - name: Upload HTML Report Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-html-report-${{ matrix.browser }}
-          path: report/pytest-report-${{ matrix.browser }}.html
+          name: pytest-html-reports
+          path: report/
