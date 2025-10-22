@@ -48,7 +48,7 @@ from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.microsoft import EdgeChromiumDriverManager  # <- for Edge
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 # CLI option
 def pytest_addoption(parser):
@@ -64,7 +64,7 @@ def pytest_generate_tests(metafunc):
         browsers = list(dict.fromkeys(browsers))
         metafunc.parametrize("browser", browsers)
 
-# Fixture for driver (function scope)
+# Fixture for driver
 @pytest.fixture(scope="function")
 def setup(request, browser):
     driver = None
@@ -76,15 +76,15 @@ def setup(request, browser):
             options.add_argument("--headless")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=options)
 
     elif browser.lower() == "edge":
         options = EdgeOptions()
         if is_ci:
-            options.add_argument("--headless=new")  # for Edge headless
+            options.add_argument("--headless")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
-        driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
+        driver = webdriver.Edge(executable_path=EdgeChromiumDriverManager().install(), options=options)
 
     else:
         raise ValueError(f"Browser '{browser}' not supported!")
