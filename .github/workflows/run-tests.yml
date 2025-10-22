@@ -1,4 +1,4 @@
-name: Python Tests with Allure and HTML Reports
+name: Python Tests with Allure and HTML Reports (Chrome + Edge)
 
 on:
   push:
@@ -11,6 +11,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        browser: [chrome, edge]   # Run tests on both browsers
 
     steps:
       - name: Checkout Repository
@@ -27,24 +31,19 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-html allure-pytest selenium webdriver-manager
 
-      - name: Install Browsers
+      - name: Install Browsers and Drivers
         run: |
           sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver wget unzip xvfb
-          # Install Edge for Linux
-          wget https://msedgedriver.azureedge.net/118.0.2088.76/edgedriver_linux64.zip
-          unzip edgedriver_linux64.zip
-          sudo mv msedgedriver /usr/bin/msedgedriver
-          sudo chmod +x /usr/bin/msedgedriver
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          sudo apt-get install -y microsoft-edge-stable
+          wget https://msedgedriver.azureedge.net/117.0.2045.43/edgedriver_linux64.zip -O edgedriver.zip
+          unzip edgedriver.zip -d $HOME
+          sudo mv $HOME/msedgedriver /usr/bin/msedgedriver
 
-      - name: Run Pytest for Chrome
+      - name: Run Pytest (Generate Allure + HTML reports)
         run: |
           mkdir -p allure-results report
-          pytest tests --browser chrome --headless --alluredir=allure-results --html=report/pytest-report-chrome.html --self-contained-html --disable-warnings -v
-
-      - name: Run Pytest for Edge
-        run: |
-          pytest tests --browser edge --headless --alluredir=allure-results --html=report/pytest-report-edge.html --self-contained-html --disable-warnings -v
+          pytest tests --alluredir=allure-results --html=report/pytest-report-${{ matrix.browser }}.html --self-contained-html --disable-warnings -v -o browser=${{ matrix.browser }}
 
       - name: Download Allure CLI
         run: |
@@ -65,10 +64,8 @@ jobs:
           name: allure-report
           path: allure-report
 
-      - name: Upload HTML Report Artifacts
+      - name: Upload HTML Report Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-html-reports
-          path: |
-            report/pytest-report-chrome.html
-            report/pytest-report-edge.html
+          name: pytest-html-report-${{ matrix.browser }}
+          path: report/pytest-report-${{ matrix.browser }}.html
